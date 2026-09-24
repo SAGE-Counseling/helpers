@@ -1,0 +1,9 @@
+# Fixed severity-to-channel routing for AdminAlert
+
+**Status:** accepted
+
+The three consuming apps currently each hand-wire their own notion of "who gets told what, on which channel" (`teamsInfo`/`teamsWarning`/`teamsUrgent`, ad-hoc `Notification::route('mail', ...)` calls, an unreachable Redis-throttle branch, a handler that silently never sends) — see `docs/full-source-audit.md` and `docs/helper-consolidation-candidates.md`. We considered two alternatives before settling on this: (1) letting each call site explicitly choose channels (`AdminAlert::send($msg)->via(['mail','teams'])`), and (2) letting each site override the severity→channel mapping in its own config. Both were rejected because they reintroduce the exact problem this package exists to remove — per-call-site or per-site channel decisions that drift out of sync across bi-reflector/rps/compliance-portal, which is how the current mess happened.
+
+**Decision:** `AdminAlert` routing is driven entirely by a single fixed `Severity` → `Channel` map owned by the package, not configurable per call site or per site: `Info` → Mail; `Warning` → Mail + Teams; `Urgent` → Mail + Teams + Sms (Sms pending implementation). Channels only ever add as severity rises — never a lower severity reaching a channel a higher one doesn't. A call site picks a `Severity`; it never picks channels directly. A site with a channel unconfigured (e.g. no Teams webhook) simply no-ops on that channel rather than erroring.
+
+**Consequences:** Adding a new channel (ClickSend SMS) later means adding one channel implementation and placing it in the map — no call-site changes across any of the three apps. The tradeoff is that no alert can deviate from its severity's channel set (e.g. there's no way to say "email-only, even though this is Urgent") — if that's ever needed, it requires revisiting this ADR, not a config override.
