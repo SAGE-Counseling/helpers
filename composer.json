@@ -1,0 +1,25 @@
+{
+    "name": "sage-counseling/helpers",
+    "description": "Shared helper package for SAGE Counseling sites",
+    "type": "library",
+    "license": "MIT",
+    "keywords": ["sage-counseling", "helpers"],
+    "require": {
+        "php": "^8.1"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^10.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "SageCounseling\\Helpers\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "SageCounseling\\Helpers\\Tests\\": "tests/"
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}
