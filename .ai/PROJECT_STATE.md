@@ -7,31 +7,38 @@ one-time task).
 
 ## Current status
 
-Package scope and design are being planned in `docs/` before any implementation lands. Priority order is
-admin notifications > general helpers > date/timezone module. No code beyond the initial `Str` class and
-its test exists yet for any of the three areas.
+Admin-notifications core routing is implemented (issue #1, branch `ai/claude/1-admin-alert-core`, PR
+pending). Priority order remains admin notifications > general helpers > date/timezone module.
 
 ## What's working
 
 - Composer package skeleton (PSR-4, PHPUnit, CI workflow, MIT license) is in place.
 - `SageCounseling\Helpers\Str` exists with a passing test (`tests/StrTest.php`).
+- `SageCounseling\Helpers\Notifications\{Severity,Channel,ChannelMap,ChannelSender,ChannelRegistry,
+  NullChannelSender,AdminMessage,AdminAlert,AdminInfo}` — the framework-agnostic routing core, with unit
+  tests covering per-severity channel sets, `AdminInfo` targeting only its named channel, and unregistered
+  channels no-op'ing instead of throwing. `vendor/bin/phpunit` passes (8 tests, 16 assertions).
 - Design docs for the admin-notifications module are settled: see `docs/admin-notifications-contract.md`,
   root `CONTEXT.md`, and `docs/adr/0001-fixed-severity-channel-map.md` /
   `docs/adr/0002-admininfo-separate-entry-point.md`.
 
 ## What's broken / blocked
 
-- Nothing is implemented yet for `AdminAlert`/`AdminInfo`, the date/timezone module, or the general-helper
-  extractions listed in `docs/helper-consolidation-candidates.md` — the design is done, the code isn't.
+- No concrete channel senders exist yet — `ChannelRegistry` has nothing registered by default, so
+  `AdminAlert`/`AdminInfo` currently no-op everywhere until a consuming app registers real Mail/Teams
+  senders. This is deliberate scope (see issue #1's "out of scope" list) but means the module isn't usable
+  end-to-end yet.
+- The date/timezone module and the general-helper extractions in `docs/helper-consolidation-candidates.md`
+  are still unstarted.
 - Date/timezone module work is blocked on each of the three consuming apps (bi-reflector, rps,
   compliance-portal) actually setting `APP_TIMEZONE=America/Phoenix` — see `docs/timezone-recommendation.md`.
   This isn't something this repo can unblock on its own.
 
 ## Next milestone
 
-Implement `AdminAlert` and `AdminInfo` per the settled contract (`docs/admin-notifications-contract.md`),
-including the Mail and Teams channel senders and the fixed severity→channel map. SMS (ClickSend) is future
-work, not part of this milestone.
+Implement the concrete Mail and Teams `ChannelSender`s (a follow-up issue to #1) so `AdminAlert`/`AdminInfo`
+are usable end-to-end by a consuming Laravel app. ClickSend SMS remains future work, not part of this
+milestone.
 
 ## Recent decisions
 
@@ -41,3 +48,5 @@ work, not part of this milestone.
   map, no per-call-site or per-site overrides (`docs/adr/0001-fixed-severity-channel-map.md`); `AdminInfo`
   added as a separate explicit-channel entry point alongside `AdminAlert`
   (`docs/adr/0002-admininfo-separate-entry-point.md`).
+- 2026-09-24: Issue #1 scoped `AdminAlert`/`AdminInfo` to a framework-agnostic routing core only, deferring
+  concrete Mail/Teams senders to a follow-up issue, per `.ai/CONTEXT.md`'s framework-agnostic-core guidance.
