@@ -23,7 +23,7 @@ general helpers > date/timezone module.
 - `config/sage-helpers.php` + `SageCounseling\Helpers\Laravel\SageHelpersServiceProvider` — the
   Laravel-specific glue (issue #4). Reads the three canonical env vars, publishes the config into a
   consuming app, and is auto-discovered via `composer.json`'s `extra.laravel.providers`. Depends on
-  `illuminate/support`/`illuminate/contracts` (`^9.0 || ^10.0`, PHP 8.1-compatible) — the only part of the
+  `illuminate/support` (`^9.0 || ^10.0`, PHP 8.1-compatible) — the only part of the
   package allowed to depend on `illuminate/*`, per `.ai/CONTEXT.md`. `registerConfiguredSenders()` is a
   documented no-op stub until the Mail/Teams sender tickets (#2/#3) land.
 - Design docs for the admin-notifications module are settled: see `docs/admin-notifications-contract.md`,
@@ -59,8 +59,11 @@ milestone.
   (`docs/adr/0002-admininfo-separate-entry-point.md`).
 - 2026-09-24: Issue #1 scoped `AdminAlert`/`AdminInfo` to a framework-agnostic routing core only, deferring
   concrete Mail/Teams senders to a follow-up issue, per `.ai/CONTEXT.md`'s framework-agnostic-core guidance.
-- 2026-09-24: Issue #4 added `illuminate/support`/`illuminate/contracts` as real (non-dev) dependencies,
-  scoped to `src/Laravel/` only — the explicit exception `.ai/CONTEXT.md` calls for before adding a
-  framework dependency. Pinned to `^9.0 || ^10.0` (not `^11`/`^12`) to stay installable on PHP 8.1, since
-  Laravel 11+ requires PHP 8.2. `vlucas/phpdotenv` was added as a dev-only dependency so the package's own
-  tests can call the `env()` helper directly; consuming Laravel apps already ship it via `laravel/framework`.
+- 2026-09-24: Issue #4 added `illuminate/support` as a real (non-dev) dependency, scoped to `src/Laravel/`
+  only — the explicit exception `.ai/CONTEXT.md` calls for before adding a framework dependency. Pinned to
+  `^9.0 || ^10.0` (not `^11`/`^12`) to stay installable on PHP 8.1, since Laravel 11+ requires PHP 8.2.
+  `illuminate/contracts` was left off `require` since it's already pulled in transitively and nothing in
+  `src/`/`tests/` references it directly (caught in code review). `vlucas/phpdotenv` was added as a dev-only
+  dependency so the package's own tests can call the `env()` helper directly — `illuminate/support`'s
+  `env()` calls into `Illuminate\Support\Env`, which needs `vlucas/phpdotenv` at runtime and doesn't bundle
+  it; consuming Laravel apps already ship it via `laravel/framework`.
