@@ -7,11 +7,11 @@ one-time task).
 
 ## Current status
 
-Admin-notifications core routing is implemented (issue #1, branch `ai/claude/1-admin-alert-core`, merged).
-The Laravel config + service-provider scaffold is implemented (issue #4, merged). The concrete Mail (#9,
-merged) and Teams (#10, this branch) channel senders are both implemented — `AdminAlert`/`AdminInfo` are now
-usable end-to-end on both channels once this branch lands. Priority order remains admin notifications >
-general helpers > date/timezone module.
+Admin-notifications core routing is implemented (issue #1, merged). The Laravel config + service-provider
+scaffold (#4), Mail (#9), and Teams (#10) channel senders are all merged — `AdminAlert`/`AdminInfo` are
+usable end-to-end on both channels. `illuminate/support`'s version constraint is being widened to actually
+support all three consuming apps (#15, this branch) after rps's first real `composer require` failed to
+resolve. Priority order remains admin notifications > general helpers > date/timezone module.
 
 ## What's working
 
@@ -24,7 +24,7 @@ general helpers > date/timezone module.
 - `config/sage-helpers.php` + `SageCounseling\Helpers\Laravel\SageHelpersServiceProvider` — the
   Laravel-specific glue (issue #4). Reads the three canonical env vars, publishes the config into a
   consuming app, and is auto-discovered via `composer.json`'s `extra.laravel.providers`. Depends on
-  `illuminate/support` (`^9.0 || ^10.0`, PHP 8.1-compatible) — the only part of the
+  `illuminate/support` (`^9.0 || ^10.0 || ^11.0 || ^12.0`, issue #15) — the only part of the
   package allowed to depend on `illuminate/*`, per `.ai/CONTEXT.md`.
 - `SageCounseling\Helpers\Notifications\MailChannelSender` (issue #9) — sends an `AdminMessage` as raw text
   via a constructor-injected `Illuminate\Contracts\Mail\Mailer`, addressed to `sage-helpers.admin.email`/
@@ -63,6 +63,14 @@ current milestone.
 
 ## Recent decisions
 
+- 2026-09-25: Issue #15 widened `illuminate/support` from `^9.0 || ^10.0` to also include `^11.0 || ^12.0`,
+  correcting the #4 decision below — discovered when rps (real Laravel 12, `illuminate/support ^12.0`) failed
+  to install the package at all. The original narrowing was based on an *unverified* assumption that some
+  consuming app needed PHP 8.1; checking all three apps' actual `composer.json` found bi-reflector on PHP
+  8.2/Laravel 10, compliance-portal on PHP 8.3/Laravel 10, and rps on PHP 8.2/Laravel 12 — none need PHP 8.1.
+  Confirmed compatible by testing against `illuminate/support` resolved to `v12.69.2`: `Mailer` contract
+  gained a `sendNow()` method in that range (the only breaking surface change found), requiring `FakeMailer`
+  (test double) to implement it; `MailChannelSender` itself needed no change since it only calls `raw()`.
 - 2026-09-25: Issue #10 implemented `TeamsChannelSender` behind a package-defined `HttpPoster` interface
   (rather than depending on `GuzzleHttp\ClientInterface` directly), with `GuzzleHttpPoster` as the one
   concrete adapter — keeps the sender's own tests to a one-method fake instead of a full Guzzle client
