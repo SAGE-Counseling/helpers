@@ -2,7 +2,11 @@
 
 namespace SageCounseling\Helpers\Laravel;
 
+use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Support\ServiceProvider;
+use SageCounseling\Helpers\Notifications\Channel;
+use SageCounseling\Helpers\Notifications\ChannelRegistry;
+use SageCounseling\Helpers\Notifications\MailChannelSender;
 
 /**
  * Laravel glue for sage-counseling/helpers: publishes config/sage-helpers.php
@@ -32,15 +36,23 @@ class SageHelpersServiceProvider extends ServiceProvider
 
     /**
      * Register a ChannelSender into ChannelRegistry for each channel that has
-     * its required config present. No concrete senders exist yet (see issues
-     * #2/#3 for Mail and Teams) — this is a no-op today, to be filled in as
-     * those senders land.
+     * its required config present. Teams (#10) is still a no-op until that
+     * sender lands.
      */
     protected function registerConfiguredSenders(): void
     {
-        // TODO(#2): if config('sage-helpers.admin.email') is set, register a
-        // Mail ChannelSender for Channel::Mail.
-        // TODO(#3): if config('sage-helpers.teams.webhook_url') is set,
+        $config = $this->app->make('config')->get('sage-helpers', []);
+        $adminEmail = $config['admin']['email'] ?? null;
+
+        if ($adminEmail) {
+            ChannelRegistry::register(Channel::Mail, new MailChannelSender(
+                $this->app->make(Mailer::class),
+                $adminEmail,
+                $config['admin']['name'] ?? null,
+            ));
+        }
+
+        // TODO(#10): if config('sage-helpers.teams.webhook_url') is set,
         // register a Teams ChannelSender for Channel::Teams.
     }
 }

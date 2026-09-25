@@ -13,14 +13,30 @@ class FakeApplication
 {
     public FakeConfigRepository $config;
 
+    /** @var array<string, mixed> */
+    private array $bindings = [];
+
     public function __construct()
     {
         $this->config = new FakeConfigRepository();
     }
 
-    public function make(string $abstract): FakeConfigRepository
+    /**
+     * Registers a fake to return for a given abstract, so tests can hand the
+     * provider a fake Mailer/HTTP client without a real container.
+     */
+    public function bind(string $abstract, mixed $instance): void
     {
-        return $this->config;
+        $this->bindings[$abstract] = $instance;
+    }
+
+    public function make(string $abstract): mixed
+    {
+        if ($abstract === 'config') {
+            return $this->config;
+        }
+
+        return $this->bindings[$abstract] ?? $this->config;
     }
 
     public function configPath(string $path = ''): string
