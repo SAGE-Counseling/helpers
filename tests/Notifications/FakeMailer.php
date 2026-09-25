@@ -42,4 +42,9 @@ final class FakeMailer implements Mailer
     {
         throw new \LogicException('FakeMailer::send() is not used by MailChannelSender.');
     }
+
+    public function sendNow($mailable, array $data = [], $callback = null)
+    {
+        throw new \LogicException('FakeMailer::sendNow() is not used by MailChannelSender.');
+    }
 }
