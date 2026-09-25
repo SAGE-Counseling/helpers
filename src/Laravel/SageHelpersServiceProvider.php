@@ -2,7 +2,13 @@
 
 namespace SageCounseling\Helpers\Laravel;
 
+use GuzzleHttp\Client;
 use Illuminate\Support\ServiceProvider;
+use SageCounseling\Helpers\Notifications\Channel;
+use SageCounseling\Helpers\Notifications\ChannelRegistry;
+use SageCounseling\Helpers\Notifications\GuzzleHttpPoster;
+use SageCounseling\Helpers\Notifications\HttpPoster;
+use SageCounseling\Helpers\Notifications\TeamsChannelSender;
 
 /**
  * Laravel glue for sage-counseling/helpers: publishes config/sage-helpers.php
@@ -19,6 +25,8 @@ class SageHelpersServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(self::CONFIG_PATH, 'sage-helpers');
+
+        $this->app->singleton(HttpPoster::class, static fn () => new GuzzleHttpPoster(new Client()));
     }
 
     public function boot(): void
@@ -32,15 +40,21 @@ class SageHelpersServiceProvider extends ServiceProvider
 
     /**
      * Register a ChannelSender into ChannelRegistry for each channel that has
-     * its required config present. No concrete senders exist yet (see issues
-     * #2/#3 for Mail and Teams) — this is a no-op today, to be filled in as
-     * those senders land.
+     * its required config present. Mail (#9) is a separate, still-pending
+     * ticket's worth of wiring.
      */
     protected function registerConfiguredSenders(): void
     {
-        // TODO(#2): if config('sage-helpers.admin.email') is set, register a
+        // TODO(#9): if config('sage-helpers.admin.email') is set, register a
         // Mail ChannelSender for Channel::Mail.
-        // TODO(#3): if config('sage-helpers.teams.webhook_url') is set,
-        // register a Teams ChannelSender for Channel::Teams.
+
+        $webhookUrl = $this->app->make('config')->get('sage-helpers', [])['teams']['webhook_url'] ?? null;
+
+        if ($webhookUrl) {
+            ChannelRegistry::register(Channel::Teams, new TeamsChannelSender(
+                $this->app->make(HttpPoster::class),
+                $webhookUrl,
+            ));
+        }
     }
 }

@@ -5,9 +5,19 @@ namespace SageCounseling\Helpers\Tests\Laravel;
 use Illuminate\Support\ServiceProvider;
 use PHPUnit\Framework\TestCase;
 use SageCounseling\Helpers\Laravel\SageHelpersServiceProvider;
+use SageCounseling\Helpers\Notifications\AdminAlert;
+use SageCounseling\Helpers\Notifications\ChannelRegistry;
+use SageCounseling\Helpers\Notifications\HttpPoster;
+use SageCounseling\Helpers\Notifications\Severity;
+use SageCounseling\Helpers\Tests\Notifications\SpyHttpPoster;
 
 class SageHelpersServiceProviderTest extends TestCase
 {
+    protected function tearDown(): void
+    {
+        ChannelRegistry::reset();
+    }
+
     public function test_register_merges_the_package_config(): void
     {
         $app = new FakeApplication();
@@ -47,5 +57,38 @@ class SageHelpersServiceProviderTest extends TestCase
         $provider->boot();
 
         $this->assertContains('sage-helpers-config', ServiceProvider::publishableGroups());
+    }
+
+    public function test_boot_registers_a_teams_channel_sender_when_webhook_url_is_configured(): void
+    {
+        $app = new FakeApplication();
+        $poster = new SpyHttpPoster();
+
+        $provider = new SageHelpersServiceProvider($app);
+        $provider->register();
+        $app->bind(HttpPoster::class, $poster);
+        $app->config->set('sage-helpers', [
+            'admin' => ['email' => null, 'name' => null],
+            'teams' => ['webhook_url' => 'https://example.webhook.office.com/webhookb2/abc'],
+        ]);
+
+        $provider->boot();
+        AdminAlert::send('database unreachable', Severity::Urgent, 'DB outage');
+
+        $this->assertCount(1, $poster->calls);
+        $this->assertSame('https://example.webhook.office.com/webhookb2/abc', $poster->calls[0]['url']);
+        $this->assertSame('DB outage: database unreachable', $poster->calls[0]['payload']['text']);
+    }
+
+    public function test_boot_does_not_register_a_teams_sender_when_webhook_url_is_unconfigured(): void
+    {
+        $app = new FakeApplication();
+        $provider = new SageHelpersServiceProvider($app);
+
+        $provider->register();
+        $provider->boot();
+        AdminAlert::send('heads up', Severity::Warning);
+
+        $this->assertTrue(true, 'AdminAlert::send() must no-op instead of throwing with no sender registered.');
     }
 }
