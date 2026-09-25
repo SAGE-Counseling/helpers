@@ -18,17 +18,35 @@ These rules are always in effect unless a task explicitly overrides them.
 - **FAILURE STATE:** If the agent is on the main branch, it must STOP and request the user to create a
   branch, provide the command to create one, or create the branch and switch to it — unless the
   interactive-session exception below applies.
+- **DOCS/CONFIG EXCEPTION (standing):** Documentation and AI-instruction/config files — `.ai/*.md`,
+  `docs/**`, root `CONTEXT.md`, `CLAUDE.md`/`AGENTS.md`-style files, `README.md` — may always be worked on
+  and committed directly to main/master. No issue, no branch, no per-turn confirmation needed. This does
+  **not** cover code: anything under `src/`, `tests/`, `config/` (the published app config, not agent docs),
+  or that changes the app's runtime behavior.
+  - **Very small code changes** (a one-line fix, a typo in a comment, a trivial rename) may also skip the
+    issue — but need the user's explicit approval in the session first, every time. They still don't need a
+    branch unless the user asks for one.
+  - Anything bigger than "very small," or that changes behavior, still requires an issue tied to it and the
+    full branch/PR flow below.
+  - If there is any doubt about whether a change qualifies as docs/config or "very small," treat it as code
+    and use the normal branch/issue/PR flow instead.
 - **INTERACTIVE-SESSION EXCEPTION:** This rule exists to protect unsupervised/AFK agent runs and
   multi-agent collision avoidance, where a branch is the only checkpoint before a bad change lands. It is
   not needed when a human is live in the session watching each tool call. In a live interactive session,
   the agent may commit directly to main — skipping the issue/branch/PR flow — only when **all** of the
   following hold:
   - The user is present in the session and explicitly authorizes the direct commit (a standing instruction
-    from an earlier turn does not count; ask each time).
+    from an earlier turn does not count; ask each time) — except for the standing docs/config exception
+    above, which needs no per-turn ask.
   - The change is low-risk and small in scope: documentation, comments, or config tweaks — not logic,
     validation, orchestration, security boundaries, or anything requiring tests per the Critical rule above.
   - If there is any doubt about whether a change qualifies, treat it as out of scope for this exception and
     use the normal branch/issue/PR flow instead.
+- **UNCOMMITTED CHANGES FOUND IN THE WORKING TREE:** If files show up modified/staged with no clear
+  indication of who changed them (not something this session did), do not discard them, stash them away
+  silently, or "fix" them back to the committed/default state. Miri may have made local changes and simply
+  forgotten to commit. Leave them exactly as found, flag them to her (what changed, in which files), and let
+  her decide whether to keep, commit, or discard them.
 - **NO DESTRUCTIVE DB/STATE COMMANDS OUTSIDE THE TEST RUNNER:** Never run a full-reset/wipe command (or its
   programmatic equivalent, e.g. from a REPL/console) against real data — even one written specifically to
   "verify" something. Not applicable to this repo's own codebase today (no database — see "Database
