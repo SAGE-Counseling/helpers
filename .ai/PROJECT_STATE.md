@@ -7,8 +7,10 @@ one-time task).
 
 ## Current status
 
-Admin-notifications core routing is implemented (issue #1, branch `ai/claude/1-admin-alert-core`, PR
-pending). Priority order remains admin notifications > general helpers > date/timezone module.
+Admin-notifications core routing is implemented (issue #1, branch `ai/claude/1-admin-alert-core`, merged).
+The Laravel config + service-provider scaffold is implemented (issue #4, branch
+`ai/claude/4-config-service-provider-scaffold`, PR pending). Priority order remains admin notifications >
+general helpers > date/timezone module.
 
 ## What's working
 
@@ -17,17 +19,24 @@ pending). Priority order remains admin notifications > general helpers > date/ti
 - `SageCounseling\Helpers\Notifications\{Severity,Channel,ChannelMap,ChannelSender,ChannelRegistry,
   NullChannelSender,AdminMessage,AdminAlert,AdminInfo}` — the framework-agnostic routing core, with unit
   tests covering per-severity channel sets, `AdminInfo` targeting only its named channel, and unregistered
-  channels no-op'ing instead of throwing. `vendor/bin/phpunit` passes (8 tests, 16 assertions).
+  channels no-op'ing instead of throwing.
+- `config/sage-helpers.php` + `SageCounseling\Helpers\Laravel\SageHelpersServiceProvider` — the
+  Laravel-specific glue (issue #4). Reads the three canonical env vars, publishes the config into a
+  consuming app, and is auto-discovered via `composer.json`'s `extra.laravel.providers`. Depends on
+  `illuminate/support` (`^9.0 || ^10.0`, PHP 8.1-compatible) — the only part of the
+  package allowed to depend on `illuminate/*`, per `.ai/CONTEXT.md`. `registerConfiguredSenders()` is a
+  documented no-op stub until the Mail/Teams sender tickets (#2/#3) land.
 - Design docs for the admin-notifications module are settled: see `docs/admin-notifications-contract.md`,
   root `CONTEXT.md`, and `docs/adr/0001-fixed-severity-channel-map.md` /
   `docs/adr/0002-admininfo-separate-entry-point.md`.
+- `vendor/bin/phpunit` passes (13 tests, 27 assertions).
 
 ## What's broken / blocked
 
 - No concrete channel senders exist yet — `ChannelRegistry` has nothing registered by default, so
-  `AdminAlert`/`AdminInfo` currently no-op everywhere until a consuming app registers real Mail/Teams
-  senders. This is deliberate scope (see issue #1's "out of scope" list) but means the module isn't usable
-  end-to-end yet.
+  `AdminAlert`/`AdminInfo` currently no-op everywhere until `SageHelpersServiceProvider::registerConfiguredSenders()`
+  is filled in by the Mail/Teams sender tickets (#2/#3). This is deliberate scope but means the module isn't
+  usable end-to-end yet.
 - The date/timezone module and the general-helper extractions in `docs/helper-consolidation-candidates.md`
   are still unstarted.
 - Date/timezone module work is blocked on each of the three consuming apps (bi-reflector, rps,
@@ -50,3 +59,11 @@ milestone.
   (`docs/adr/0002-admininfo-separate-entry-point.md`).
 - 2026-09-24: Issue #1 scoped `AdminAlert`/`AdminInfo` to a framework-agnostic routing core only, deferring
   concrete Mail/Teams senders to a follow-up issue, per `.ai/CONTEXT.md`'s framework-agnostic-core guidance.
+- 2026-09-24: Issue #4 added `illuminate/support` as a real (non-dev) dependency, scoped to `src/Laravel/`
+  only — the explicit exception `.ai/CONTEXT.md` calls for before adding a framework dependency. Pinned to
+  `^9.0 || ^10.0` (not `^11`/`^12`) to stay installable on PHP 8.1, since Laravel 11+ requires PHP 8.2.
+  `illuminate/contracts` was left off `require` since it's already pulled in transitively and nothing in
+  `src/`/`tests/` references it directly (caught in code review). `vlucas/phpdotenv` was added as a dev-only
+  dependency so the package's own tests can call the `env()` helper directly — `illuminate/support`'s
+  `env()` calls into `Illuminate\Support\Env`, which needs `vlucas/phpdotenv` at runtime and doesn't bundle
+  it; consuming Laravel apps already ship it via `laravel/framework`.
