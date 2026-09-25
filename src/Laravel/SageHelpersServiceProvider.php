@@ -3,11 +3,13 @@
 namespace SageCounseling\Helpers\Laravel;
 
 use GuzzleHttp\Client;
+use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Support\ServiceProvider;
 use SageCounseling\Helpers\Notifications\Channel;
 use SageCounseling\Helpers\Notifications\ChannelRegistry;
 use SageCounseling\Helpers\Notifications\GuzzleHttpPoster;
 use SageCounseling\Helpers\Notifications\HttpPoster;
+use SageCounseling\Helpers\Notifications\MailChannelSender;
 use SageCounseling\Helpers\Notifications\TeamsChannelSender;
 
 /**
@@ -40,15 +42,21 @@ class SageHelpersServiceProvider extends ServiceProvider
 
     /**
      * Register a ChannelSender into ChannelRegistry for each channel that has
-     * its required config present. Mail (#9) is a separate, still-pending
-     * ticket's worth of wiring.
+     * its required config present.
      */
     protected function registerConfiguredSenders(): void
     {
-        // TODO(#9): if config('sage-helpers.admin.email') is set, register a
-        // Mail ChannelSender for Channel::Mail.
+        $config = $this->app->make('config')->get('sage-helpers', []);
+        $adminEmail = $config['admin']['email'] ?? null;
+        $webhookUrl = $config['teams']['webhook_url'] ?? null;
 
-        $webhookUrl = $this->app->make('config')->get('sage-helpers', [])['teams']['webhook_url'] ?? null;
+        if ($adminEmail) {
+            ChannelRegistry::register(Channel::Mail, new MailChannelSender(
+                $this->app->make(Mailer::class),
+                $adminEmail,
+                $config['admin']['name'] ?? null,
+            ));
+        }
 
         if ($webhookUrl) {
             ChannelRegistry::register(Channel::Teams, new TeamsChannelSender(
