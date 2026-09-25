@@ -39,17 +39,25 @@ milestone). Task history lives in closed issues — query the tracker instead of
 This is a solo-developer-plus-agents project; PRs here are not a review gate — they exist mainly so the
 human maintainer (Miri) has a diff to look at before merging. Keep this step lightweight.
 
-A task only moves from claimed to PR once all of the following are true:
+The canonical sequence, in order:
 
-- All new and existing relevant tests pass locally.
-- If the change is non-trivial (new feature, non-obvious logic, anything touching a security/data boundary,
-  or a diff you'd want a second pair of eyes on — use judgment), run whatever review tooling this repo has
-  configured and address or consciously dismiss its findings before opening the PR.
-- The branch is pushed.
-- Completion requirements below are posted as a comment on the issue.
-- The PR is opened, references the issue (so merging auto-closes it), and its link is posted back to the
-  issue.
-- Return to the main branch so the working tree isn't left sitting on the task branch.
+1. Claim the issue (see Required startup steps above).
+2. Create the branch (see Branching rules above).
+3. Do the work on that branch — commit as you go.
+4. All new and existing relevant tests pass locally.
+5. If the change is non-trivial (new feature, non-obvious logic, anything touching a security/data boundary,
+   or a diff you'd want a second pair of eyes on — use judgment), run whatever review tooling this repo has
+   configured and address or consciously dismiss its findings before opening the PR.
+6. Push the branch to origin.
+7. Post the completion requirements below as a comment on the issue.
+8. Open the PR, referencing the issue (so merging auto-closes it); post the PR link back to the issue as a
+   comment.
+9. Return to the main branch (`git checkout main`/`master`) so the working tree isn't left sitting on the
+   task branch.
+
+**Merging is the human's call, not the agent's.** The PR is Miri's review surface for the file changes —
+she reviews and merges (or requests changes) on GitHub herself. Do not merge the PR yourself unless
+explicitly instructed to (see `.ai/GUARDRAILS.md`'s "Do not merge into main without explicit instruction").
 
 ## After a PR merges
 
