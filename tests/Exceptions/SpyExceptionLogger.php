@@ -7,15 +7,15 @@ use Throwable;
 
 final class SpyExceptionLogger implements ExceptionLogger
 {
-    /** @var list<array{exception: Throwable, customMessage: ?string, function: ?string}> */
+    /** @var list<array{exception: Throwable, customMessage: ?string, callingFunction: ?string}> */
     public array $received = [];
 
-    public function logException(Throwable $exception, ?string $customMessage = null, ?string $function = null): void
+    public function logException(Throwable $exception, ?string $customMessage = null, ?string $callingFunction = null): void
     {
         $this->received[] = [
             'exception' => $exception,
             'customMessage' => $customMessage,
-            'function' => $function,
+            'callingFunction' => $callingFunction,
         ];
     }
 }

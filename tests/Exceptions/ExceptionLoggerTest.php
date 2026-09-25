@@ -15,7 +15,7 @@ class ExceptionLoggerTest extends TestCase
         $logger->logException($exception, 'custom message', 'someFunction');
 
         $this->assertSame([
-            ['exception' => $exception, 'customMessage' => 'custom message', 'function' => 'someFunction'],
+            ['exception' => $exception, 'customMessage' => 'custom message', 'callingFunction' => 'someFunction'],
         ], $logger->received);
     }
 
@@ -27,7 +27,7 @@ class ExceptionLoggerTest extends TestCase
         $logger->logException($exception);
 
         $this->assertSame([
-            ['exception' => $exception, 'customMessage' => null, 'function' => null],
+            ['exception' => $exception, 'customMessage' => null, 'callingFunction' => null],
         ], $logger->received);
     }
 }
