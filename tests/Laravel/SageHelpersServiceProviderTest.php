@@ -8,8 +8,10 @@ use PHPUnit\Framework\TestCase;
 use SageCounseling\Helpers\Laravel\SageHelpersServiceProvider;
 use SageCounseling\Helpers\Notifications\AdminAlert;
 use SageCounseling\Helpers\Notifications\ChannelRegistry;
+use SageCounseling\Helpers\Notifications\HttpPoster;
 use SageCounseling\Helpers\Notifications\Severity;
 use SageCounseling\Helpers\Tests\Notifications\FakeMailer;
+use SageCounseling\Helpers\Tests\Notifications\SpyHttpPoster;
 
 class SageHelpersServiceProviderTest extends TestCase
 {
@@ -80,7 +82,50 @@ class SageHelpersServiceProviderTest extends TestCase
         $this->assertSame(['admin@example.com' => 'SAGE Admin'], $mailer->rawCalls[0]['to']);
     }
 
-    public function test_boot_does_not_register_a_mail_sender_when_admin_email_is_unconfigured(): void
+    public function test_boot_registers_a_teams_channel_sender_when_webhook_url_is_configured(): void
+    {
+        $app = new FakeApplication();
+        $poster = new SpyHttpPoster();
+
+        $provider = new SageHelpersServiceProvider($app);
+        $provider->register();
+        $app->bind(HttpPoster::class, $poster);
+        $app->config->set('sage-helpers', [
+            'admin' => ['email' => null, 'name' => null],
+            'teams' => ['webhook_url' => 'https://example.webhook.office.com/webhookb2/abc'],
+        ]);
+
+        $provider->boot();
+        AdminAlert::send('database unreachable', Severity::Urgent, 'DB outage');
+
+        $this->assertCount(1, $poster->calls);
+        $this->assertSame('https://example.webhook.office.com/webhookb2/abc', $poster->calls[0]['url']);
+        $this->assertSame('DB outage: database unreachable', $poster->calls[0]['payload']['text']);
+    }
+
+    public function test_boot_registers_both_senders_when_both_are_configured(): void
+    {
+        $app = new FakeApplication();
+        $mailer = new FakeMailer();
+        $poster = new SpyHttpPoster();
+
+        $provider = new SageHelpersServiceProvider($app);
+        $provider->register();
+        $app->bind(Mailer::class, $mailer);
+        $app->bind(HttpPoster::class, $poster);
+        $app->config->set('sage-helpers', [
+            'admin' => ['email' => 'admin@example.com', 'name' => 'SAGE Admin'],
+            'teams' => ['webhook_url' => 'https://example.webhook.office.com/webhookb2/abc'],
+        ]);
+
+        $provider->boot();
+        AdminAlert::send('database unreachable', Severity::Urgent, 'DB outage');
+
+        $this->assertCount(1, $mailer->rawCalls);
+        $this->assertCount(1, $poster->calls);
+    }
+
+    public function test_boot_does_not_register_any_sender_when_nothing_is_configured(): void
     {
         $app = new FakeApplication();
         $provider = new SageHelpersServiceProvider($app);

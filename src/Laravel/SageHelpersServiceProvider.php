@@ -2,11 +2,15 @@
 
 namespace SageCounseling\Helpers\Laravel;
 
+use GuzzleHttp\Client;
 use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Support\ServiceProvider;
 use SageCounseling\Helpers\Notifications\Channel;
 use SageCounseling\Helpers\Notifications\ChannelRegistry;
+use SageCounseling\Helpers\Notifications\GuzzleHttpPoster;
+use SageCounseling\Helpers\Notifications\HttpPoster;
 use SageCounseling\Helpers\Notifications\MailChannelSender;
+use SageCounseling\Helpers\Notifications\TeamsChannelSender;
 
 /**
  * Laravel glue for sage-counseling/helpers: publishes config/sage-helpers.php
@@ -23,6 +27,8 @@ class SageHelpersServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(self::CONFIG_PATH, 'sage-helpers');
+
+        $this->app->singleton(HttpPoster::class, static fn () => new GuzzleHttpPoster(new Client()));
     }
 
     public function boot(): void
@@ -36,13 +42,13 @@ class SageHelpersServiceProvider extends ServiceProvider
 
     /**
      * Register a ChannelSender into ChannelRegistry for each channel that has
-     * its required config present. Teams (#10) is still a no-op until that
-     * sender lands.
+     * its required config present.
      */
     protected function registerConfiguredSenders(): void
     {
         $config = $this->app->make('config')->get('sage-helpers', []);
         $adminEmail = $config['admin']['email'] ?? null;
+        $webhookUrl = $config['teams']['webhook_url'] ?? null;
 
         if ($adminEmail) {
             ChannelRegistry::register(Channel::Mail, new MailChannelSender(
@@ -52,7 +58,11 @@ class SageHelpersServiceProvider extends ServiceProvider
             ));
         }
 
-        // TODO(#10): if config('sage-helpers.teams.webhook_url') is set,
-        // register a Teams ChannelSender for Channel::Teams.
+        if ($webhookUrl) {
+            ChannelRegistry::register(Channel::Teams, new TeamsChannelSender(
+                $this->app->make(HttpPoster::class),
+                $webhookUrl,
+            ));
+        }
     }
 }
