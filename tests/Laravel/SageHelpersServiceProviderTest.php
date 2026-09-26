@@ -92,7 +92,10 @@ class SageHelpersServiceProviderTest extends TestCase
         $app->bind(HttpPoster::class, $poster);
         $app->config->set('sage-helpers', [
             'admin' => ['email' => null, 'name' => null],
-            'teams' => ['webhook_url' => 'https://example.webhook.office.com/webhookb2/abc'],
+            'teams' => [
+                'webhook_url' => 'https://example.webhook.office.com/webhookb2/abc',
+                'app_label' => 'RPS (Testing Environment)',
+            ],
         ]);
 
         $provider->boot();
@@ -100,7 +103,9 @@ class SageHelpersServiceProviderTest extends TestCase
 
         $this->assertCount(1, $poster->calls);
         $this->assertSame('https://example.webhook.office.com/webhookb2/abc', $poster->calls[0]['url']);
-        $this->assertSame('DB outage: database unreachable', $poster->calls[0]['payload']['text']);
+        $body = $poster->calls[0]['payload']['attachments'][0]['content']['body'];
+        $this->assertSame('URGENT — RPS (Testing Environment)', $body[0]['text']);
+        $this->assertSame('database unreachable', $body[2]['text']);
     }
 
     public function test_boot_registers_both_senders_when_both_are_configured(): void

@@ -62,6 +62,7 @@ class SageHelpersServiceProvider extends ServiceProvider
             ChannelRegistry::register(Channel::Teams, new TeamsChannelSender(
                 $this->app->make(HttpPoster::class),
                 $webhookUrl,
+                $config['teams']['app_label'] ?? null,
             ));
         }
     }
