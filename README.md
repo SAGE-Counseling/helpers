@@ -43,8 +43,11 @@ Sends operational alerts (errors, warnings, routine status) to Admin — a singl
    ```
    SAGE_ADMIN_EMAIL=admin@example.com
    SAGE_ADMIN_NAME="Admin"
-   SAGE_TEAMS_WEBHOOK_URL=https://outlook.office.com/webhook/...
+   SAGE_TEAMS_WEBHOOK_URL=https://<env>.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/...
+   SAGE_TEAMS_APP_LABEL="RPS (Production)"   # optional; defaults to APP_NAME
    ```
+
+   `SAGE_TEAMS_WEBHOOK_URL` must be a Power Automate **Workflows** webhook — the Teams channel sends an Adaptive Card, and the retired Office 365 connector URLs aren't supported.
 
    A channel with no config (e.g. no `SAGE_TEAMS_WEBHOOK_URL`) simply no-ops instead of erroring — so it's safe to leave Teams unset in an app that doesn't use it.
 

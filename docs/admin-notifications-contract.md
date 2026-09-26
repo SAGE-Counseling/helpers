@@ -21,27 +21,29 @@ Resolved via `/grill-with-docs` on 2026-09-24 — see [ADR-0001](./adr/0001-fixe
 - **Adding ClickSend later** means adding one channel implementation and slotting it into the `Urgent` row — no call-site changes needed across bi-reflector/rps/compliance-portal.
 - **Explicitly rejected:** per-call-site channel selection (`->via([...])`) and per-site-configurable maps — both would reintroduce the exact per-app drift this package exists to remove. See ADR-0001 for the full reasoning.
 
-## The three canonical `.env` values
+## The canonical `.env` values
 
-Every site defines exactly these three environment variables. No other "who gets admin mail" config keys should exist once this lands.
+Every site defines these environment variables (the Teams ones only if it uses Teams). No other "who gets admin mail" config keys should exist once this lands.
 
 ```
 SAGE_ADMIN_EMAIL="alerts@sagecounseling.example"
 SAGE_ADMIN_NAME="SAGE Admin Alerts"
-SAGE_TEAMS_WEBHOOK_URL="https://<tenant>.webhook.office.com/webhookb2/..."
+SAGE_TEAMS_WEBHOOK_URL="https://<env>.environment.api.powerplatform.com/powerautomate/automations/direct/workflows/..."
+SAGE_TEAMS_APP_LABEL="RPS (Testing Environment)"
 ```
 
 | Variable | Purpose |
 |---|---|
 | `SAGE_ADMIN_EMAIL` | The single email address all admin reports/alerts/warnings go to. |
 | `SAGE_ADMIN_NAME` | The display name paired with that address (used as the `Mail::to([$email => $name])` name, and anywhere a report needs to show who/what it's addressed to). |
-| `SAGE_TEAMS_WEBHOOK_URL` | The Microsoft Teams incoming-webhook URL used by the Teams notification channel, for sites that send Teams alerts. Sites that don't use Teams simply leave it unset. |
+| `SAGE_TEAMS_WEBHOOK_URL` | The Microsoft Teams **Power Automate Workflows** webhook URL used by the Teams notification channel, for sites that send Teams alerts. The channel posts an Adaptive Card envelope; legacy Office 365 connector URLs (`*.webhook.office.com/webhookb2/...`) are retired and not supported. Sites that don't use Teams simply leave it unset. |
+| `SAGE_TEAMS_APP_LABEL` | Optional. Identifies the app/environment in the Teams card heading (`{Info\|Warning\|URGENT} — {label}`), since all three apps may post to the same channel. Falls back to `APP_NAME`; if both are unset the heading is just the severity prefix. |
 
 A site with no Teams integration (currently only `rps` has one) can leave `SAGE_TEAMS_WEBHOOK_URL` blank; the package's Teams channel should no-op (or log a warning once) rather than error if it's called with no webhook configured.
 
 ## Package-side config
 
-`sage-counseling/helpers` ships a `config/sage-helpers.php` (published into each app) that reads these three values:
+`sage-counseling/helpers` ships a `config/sage-helpers.php` (published into each app) that reads these values:
 
 ```php
 return [
@@ -51,6 +53,7 @@ return [
     ],
     'teams' => [
         'webhook_url' => env('SAGE_TEAMS_WEBHOOK_URL'),
+        'app_label'   => env('SAGE_TEAMS_APP_LABEL', env('APP_NAME')),
     ],
 ];
 ```
