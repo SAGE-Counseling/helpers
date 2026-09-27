@@ -2,15 +2,18 @@
 
 namespace SageCounseling\Helpers\Tests\Laravel;
 
+use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Support\ServiceProvider;
 use PHPUnit\Framework\TestCase;
 use SageCounseling\Helpers\Laravel\SageHelpersServiceProvider;
 use SageCounseling\Helpers\Notifications\AdminAlert;
 use SageCounseling\Helpers\Notifications\ChannelRegistry;
+use SageCounseling\Helpers\Notifications\Delivery;
 use SageCounseling\Helpers\Notifications\HttpPoster;
 use SageCounseling\Helpers\Notifications\Severity;
 use SageCounseling\Helpers\Tests\Notifications\FakeMailer;
+use SageCounseling\Helpers\Tests\Notifications\SpyDispatcher;
 use SageCounseling\Helpers\Tests\Notifications\SpyHttpPoster;
 
 class SageHelpersServiceProviderTest extends TestCase
@@ -18,6 +21,7 @@ class SageHelpersServiceProviderTest extends TestCase
     protected function tearDown(): void
     {
         ChannelRegistry::reset();
+        Delivery::reset();
     }
 
     public function test_register_merges_the_package_config(): void
@@ -140,5 +144,53 @@ class SageHelpersServiceProviderTest extends TestCase
         AdminAlert::send('heads up', Severity::Info);
 
         $this->assertTrue(true, 'AdminAlert::send() must no-op instead of throwing with no sender registered.');
+    }
+
+    public function test_boot_queues_deliveries_on_the_configured_connection_and_queue_when_enabled(): void
+    {
+        $app = new FakeApplication();
+        $mailer = new FakeMailer();
+        $dispatcher = new SpyDispatcher();
+
+        $provider = new SageHelpersServiceProvider($app);
+        $provider->register();
+        $app->bind(Mailer::class, $mailer);
+        $app->bind(Dispatcher::class, $dispatcher);
+        $app->config->set('sage-helpers', [
+            'admin' => ['email' => 'admin@example.com', 'name' => null],
+            'teams' => ['webhook_url' => null],
+            'queue' => ['enabled' => true, 'connection' => 'redis', 'name' => 'alerts'],
+        ]);
+
+        $provider->boot();
+        AdminAlert::send('slow import', Severity::Warning);
+
+        $this->assertCount(0, $mailer->rawCalls);
+        $this->assertCount(1, $dispatcher->dispatched);
+        $this->assertSame('redis', $dispatcher->dispatched[0]->connection);
+        $this->assertSame('alerts', $dispatcher->dispatched[0]->queue);
+    }
+
+    public function test_boot_sends_immediately_when_queueing_is_disabled(): void
+    {
+        $app = new FakeApplication();
+        $mailer = new FakeMailer();
+        $dispatcher = new SpyDispatcher();
+
+        $provider = new SageHelpersServiceProvider($app);
+        $provider->register();
+        $app->bind(Mailer::class, $mailer);
+        $app->bind(Dispatcher::class, $dispatcher);
+        $app->config->set('sage-helpers', [
+            'admin' => ['email' => 'admin@example.com', 'name' => null],
+            'teams' => ['webhook_url' => null],
+            'queue' => ['enabled' => false, 'connection' => 'redis', 'name' => 'alerts'],
+        ]);
+
+        $provider->boot();
+        AdminAlert::send('slow import', Severity::Warning);
+
+        $this->assertCount(1, $mailer->rawCalls);
+        $this->assertCount(0, $dispatcher->dispatched);
     }
 }

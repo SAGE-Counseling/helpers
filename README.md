@@ -70,6 +70,16 @@ Sends operational alerts (errors, warnings, routine status) to Admin — a singl
 
    A channel with no config (e.g. no `SAGE_TEAMS_WEBHOOK_URL`) simply no-ops instead of erroring — so it's safe to leave Teams unset in an app that doesn't use it.
 
+4. Optional — queue alerts instead of sending them inline (requires a running queue worker, e.g. Horizon):
+
+   ```
+   SAGE_ALERTS_QUEUE=true
+   SAGE_ALERTS_QUEUE_CONNECTION=redis   # optional; defaults to the app's default connection
+   SAGE_ALERTS_QUEUE_NAME=default       # optional
+   ```
+
+   Each channel becomes its own encrypted job (3 tries). `Urgent` alerts always send immediately, so an alert about the queue itself still gets out. Either way, a failing channel is logged and never throws into your code. An app that already published `config/sage-helpers.php` picks up the `queue` defaults automatically.
+
 #### `AdminAlert` — severity-routed alerts
 
 The single call for "something needs Admin's attention." You never pick a channel yourself — `Severity` determines it via the fixed Channel Map: `Info` → Mail, `Warning` → Mail + Teams, `Urgent` → Mail + Teams.

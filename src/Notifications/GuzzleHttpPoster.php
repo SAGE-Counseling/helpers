@@ -11,12 +11,19 @@ use GuzzleHttp\ClientInterface;
  */
 final class GuzzleHttpPoster implements HttpPoster
 {
+    /** Seconds before giving up on a slow or hung endpoint, so a Delivery can't hang its caller. */
+    private const TIMEOUT = 5;
+
     public function __construct(private readonly ClientInterface $client)
     {
     }
 
     public function postJson(string $url, array $payload): void
     {
-        $this->client->request('POST', $url, ['json' => $payload]);
+        $this->client->request('POST', $url, [
+            'json' => $payload,
+            'connect_timeout' => self::TIMEOUT,
+            'timeout' => self::TIMEOUT,
+        ]);
     }
 }

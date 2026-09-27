@@ -6,6 +6,7 @@ use PHPUnit\Framework\TestCase;
 use SageCounseling\Helpers\Notifications\AdminInfo;
 use SageCounseling\Helpers\Notifications\Channel;
 use SageCounseling\Helpers\Notifications\ChannelRegistry;
+use SageCounseling\Helpers\Notifications\Delivery;
 use SageCounseling\Helpers\Notifications\Severity;
 
 class AdminInfoTest extends TestCase
@@ -13,6 +14,7 @@ class AdminInfoTest extends TestCase
     protected function tearDown(): void
     {
         ChannelRegistry::reset();
+        Delivery::reset();
     }
 
     public function test_send_reaches_only_the_named_channel(): void
@@ -28,5 +30,19 @@ class AdminInfoTest extends TestCase
         $this->assertCount(1, $teams->received);
         $this->assertSame('deploy finished', $teams->received[0]->message);
         $this->assertSame(Severity::Info, $teams->received[0]->severity);
+    }
+
+    public function test_queued_send_dispatches_one_job_for_the_named_channel(): void
+    {
+        $teams = new SpyChannelSender();
+        ChannelRegistry::register(Channel::Teams, $teams);
+        $dispatcher = new SpyDispatcher();
+        Delivery::queueOn($dispatcher);
+
+        AdminInfo::send(Channel::Teams, 'deploy finished');
+
+        $this->assertCount(0, $teams->received);
+        $this->assertCount(1, $dispatcher->dispatched);
+        $this->assertSame(Channel::Teams, $dispatcher->dispatched[0]->channel);
     }
 }

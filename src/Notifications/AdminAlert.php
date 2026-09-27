@@ -16,7 +16,7 @@ final class AdminAlert
         $adminMessage = new AdminMessage($message, $severity, $subject);
 
         foreach (ChannelMap::for($severity) as $channel) {
-            ChannelRegistry::get($channel)->send($adminMessage);
+            Delivery::send($channel, $adminMessage);
         }
     }
 }
