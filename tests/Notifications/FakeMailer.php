@@ -19,6 +19,11 @@ final class FakeMailer implements Mailer
         throw new \LogicException('FakeMailer::to() is not used by MailChannelSender.');
     }
 
+    public function cc($users)
+    {
+        throw new \LogicException('FakeMailer::cc() is not used by MailChannelSender.');
+    }
+
     public function bcc($users)
     {
         throw new \LogicException('FakeMailer::bcc() is not used by MailChannelSender.');

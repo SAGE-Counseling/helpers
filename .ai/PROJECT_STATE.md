@@ -24,7 +24,7 @@ resolve. Priority order remains admin notifications > general helpers > date/tim
 - `config/sage-helpers.php` + `SageCounseling\Helpers\Laravel\SageHelpersServiceProvider` — the
   Laravel-specific glue (issue #4). Reads the three canonical env vars, publishes the config into a
   consuming app, and is auto-discovered via `composer.json`'s `extra.laravel.providers`. Depends on
-  `illuminate/support` (`^9.0 || ^10.0 || ^11.0 || ^12.0`, issue #15) — the only part of the
+  `illuminate/support` (`^9.0 || ^10.0 || ^11.0 || ^12.0 || ^13.0`, issues #15, #19) — the only part of the
   package allowed to depend on `illuminate/*`, per `.ai/CONTEXT.md`.
 - `SageCounseling\Helpers\Notifications\MailChannelSender` (issue #9) — sends an `AdminMessage` as raw text
   via a constructor-injected `Illuminate\Contracts\Mail\Mailer`, addressed to `sage-helpers.admin.email`/
@@ -63,6 +63,10 @@ current milestone.
 
 ## Recent decisions
 
+- 2026-09-26: Issue #19 added `^13.0` to the `illuminate/support` constraint for Laravel 13 consumers.
+  Tested against `illuminate/support` resolved to `v13.33.0`: the `Mailer` contract gained a `cc()` method
+  in 13, requiring `FakeMailer` (test double) to implement it; `MailChannelSender` itself needed no change.
+  Laravel 13 requires PHP 8.3+, so a consuming app's own PHP constraint governs which major it resolves.
 - 2026-09-25: Issue #15 widened `illuminate/support` from `^9.0 || ^10.0` to also include `^11.0 || ^12.0`,
   correcting the #4 decision below — discovered when rps (real Laravel 12, `illuminate/support ^12.0`) failed
   to install the package at all. The original narrowing was based on an *unverified* assumption that some
