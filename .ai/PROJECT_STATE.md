@@ -9,14 +9,16 @@ one-time task).
 
 Admin-notifications core routing is implemented (issue #1, merged). The Laravel config + service-provider
 scaffold (#4), Mail (#9), and Teams (#10) channel senders are all merged — `AdminAlert`/`AdminInfo` are
-usable end-to-end on both channels. `illuminate/support`'s version constraint is being widened to actually
-support all three consuming apps (#15, this branch) after rps's first real `composer require` failed to
-resolve. Priority order remains admin notifications > general helpers > date/timezone module.
+usable end-to-end on both channels. `illuminate/support` supports Laravel 9–13 (#15, #19). The
+date/timezone module (#6) is implemented on this branch. Remaining from spec #3: general-helper extractions
+(#7, #8).
 
 ## What's working
 
 - Composer package skeleton (PSR-4, PHPUnit, CI workflow, MIT license) is in place.
 - `SageCounseling\Helpers\Str` exists with a passing test (`tests/StrTest.php`).
+- `SageCounseling\Helpers\Dates` (issue #6): `TIMEZONE = 'America/Phoenix'`, `fromUtc()`, `showDate()`,
+  `showDateTime()`. `nesbot/carbon` (`^2.53 || ^3.0`) is an explicit dependency.
 - `SageCounseling\Helpers\Notifications\{Severity,Channel,ChannelMap,ChannelSender,ChannelRegistry,
   NullChannelSender,AdminMessage,AdminAlert,AdminInfo}` — the framework-agnostic routing core, with unit
   tests covering per-severity channel sets, `AdminInfo` targeting only its named channel, and unregistered
@@ -49,20 +51,21 @@ resolve. Priority order remains admin notifications > general helpers > date/tim
 
 ## What's broken / blocked
 
-- The date/timezone module and the general-helper extractions in `docs/helper-consolidation-candidates.md`
-  are still unstarted.
-- Date/timezone module work is blocked on each of the three consuming apps (bi-reflector, rps,
-  compliance-portal) actually setting `APP_TIMEZONE=America/Phoenix` — see `docs/timezone-recommendation.md`.
-  This isn't something this repo can unblock on its own.
+- The general-helper extractions in `docs/helper-consolidation-candidates.md` (#7, #8) are still unstarted.
 
 ## Next milestone
 
 The admin-notifications module (#1, #4, #9, #10) is now complete end-to-end. Next: general-helper
-extractions (#7, #8) and the date/timezone module (#6). ClickSend SMS remains future work, not part of any
+extractions (#7, #8); the date/timezone module (#6) is in review. ClickSend SMS remains future work, not part of any
 current milestone.
 
 ## Recent decisions
 
+- 2026-09-26: Issue #6 added `Dates`. Unblocked because all three consuming apps now set
+  `APP_TIMEZONE="America/Phoenix"` (confirmed by Miri). `showDate()`/`showDateTime()` ship the rps behavior
+  (`Carbon::parse($date)`), return `''` for null/empty, and deliberately do not convert timezones — callers
+  convert UTC input via `fromUtc()`. `nesbot/carbon` constraint `^2.53 || ^3.0` matches what Laravel 9–13 pull
+  in; the suite was run on both Carbon 2.73 (Laravel 10) and Carbon 3.14 (Laravel 13).
 - 2026-09-26: Issue #19 added `^13.0` to the `illuminate/support` constraint for Laravel 13 consumers.
   Tested against `illuminate/support` resolved to `v13.33.0`: the `Mailer` contract gained a `cc()` method
   in 13, requiring `FakeMailer` (test double) to implement it; `MailChannelSender` itself needed no change.
