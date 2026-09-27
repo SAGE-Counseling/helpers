@@ -103,6 +103,18 @@ class AdminAlertTest extends TestCase
         $this->assertSame('alerts', $first->queue);
     }
 
+    public function test_queueing_skips_channels_that_are_not_configured(): void
+    {
+        ChannelRegistry::register(Channel::Mail, new SpyChannelSender());
+        $dispatcher = new SpyDispatcher();
+        Delivery::queueOn($dispatcher);
+
+        AdminAlert::send('slow import', Severity::Warning);
+
+        $this->assertCount(1, $dispatcher->dispatched);
+        $this->assertSame(Channel::Mail, $dispatcher->dispatched[0]->channel);
+    }
+
     public function test_urgent_is_sent_immediately_even_when_queueing_is_on(): void
     {
         $mail = new SpyChannelSender();

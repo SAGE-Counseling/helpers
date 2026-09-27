@@ -48,6 +48,8 @@ final class Delivery
     {
         $sender = ChannelRegistry::get($channel);
 
+        // An unconfigured Channel (e.g. no Teams webhook) no-ops; don't put a
+        // job on the queue that would do nothing.
         if ($sender instanceof NullChannelSender) {
             return;
         }
