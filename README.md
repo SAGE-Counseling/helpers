@@ -25,6 +25,25 @@ Str::slug('Hello World', '_'); // "hello_world"
 
 No setup required.
 
+### `Dates`
+
+Date/timezone helpers. Arizona doesn't observe DST, so `Dates::TIMEZONE` (`America/Phoenix`) is a fixed
+UTC-7 year-round — use it instead of hand-rolled `subHours()`/`-7` offsets.
+
+```php
+use SageCounseling\Helpers\Dates;
+
+Dates::TIMEZONE;                          // "America/Phoenix"
+Dates::fromUtc('2026-07-15 20:30:00');    // Carbon, 2026-07-15 13:30:00 America/Phoenix
+Dates::showDate('2026-07-15 13:30:00');   // "2026-07-15"
+Dates::showDateTime($carbon);             // "2026-07-15 13:30:00"
+Dates::showDate(null);                    // ""
+```
+
+`showDate()`/`showDateTime()` accept a string or any `DateTimeInterface` and format it as-is — they don't
+convert timezones, so pass UTC values through `fromUtc()` first. Assumes the app's `APP_TIMEZONE` is
+`America/Phoenix`.
+
 ### Admin notifications
 
 Sends operational alerts (errors, warnings, routine status) to Admin — a single email/name and a Teams webhook, shared across all three apps. See [`docs/admin-notifications-contract.md`](docs/admin-notifications-contract.md) and the ADRs in [`docs/adr/`](docs/adr) for the design rationale.
