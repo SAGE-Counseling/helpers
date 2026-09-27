@@ -86,17 +86,17 @@ These rules are always in effect unless a task explicitly overrides them.
 
 ## PHP guardrails (PHP projects only)
 
-This is a framework-agnostic Composer library (`composer.json` requires only `php: ^8.1` — no
-`illuminate/support` or other framework dependency today). Guardrails:
+This is a Composer library for Laravel apps. `composer.json` requires `illuminate/support` (Laravel 9–13),
+and the package may use Laravel features throughout `src/`. Guardrails:
 
 - PSR-4 autoloading under `SageCounseling\Helpers\` (`src/`) and `SageCounseling\Helpers\Tests\` (`tests/`)
   — new files must land in the namespace matching their directory.
 - No new global helper functions. This package exists specifically to replace the three consuming apps'
   global `app/Helpers/*.php` files with typed, namespaced classes — see `docs/helper-consolidation-candidates.md`.
   New functionality is a class/method, not a global function.
-- Don't add a framework dependency (`illuminate/support` or otherwise) to make an implementation shorter —
-  e.g. `docs/helper-consolidation-candidates.md` explicitly flags this tradeoff for a `snake()`-style
-  helper. If a task seems to need one, stop and ask rather than adding it opportunistically.
+- Laravel features are fair game — prefer Laravel's built-in mechanisms over hand-rolled equivalents. Any
+  new `illuminate/*` package or API must work on every supported Laravel version (9–13); check before
+  relying on something added in a later release.
 - Favor typed properties, parameters, and return types (PHP 8.1+ features — readonly properties, enums,
   first-class callable syntax) over untyped/dynamic code.
 - Follow the routing/entry-point boundaries already decided for the notifications module — see root
@@ -134,5 +134,5 @@ This is a framework-agnostic Composer library (`composer.json` requires only `ph
 
 Targets PHP ^8.1 per `composer.json`. This package must stay installable by all three consuming apps
 (bi-reflector, rps, compliance-portal) — check their PHP versions before requiring a newer language feature
-if that ever becomes unclear. No framework version constraint applies today since the package has no
-framework dependency.
+if that ever becomes unclear. Laravel support spans 9–13 (`illuminate/support` constraint in
+`composer.json`); widening or narrowing it is an explicit decision (see #15, #19).

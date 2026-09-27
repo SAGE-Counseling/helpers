@@ -20,14 +20,13 @@ date/timezone module (#6) is implemented on this branch. Remaining from spec #3:
 - `SageCounseling\Helpers\Dates` (issue #6): `TIMEZONE = 'America/Phoenix'`, `fromUtc()`, `showDate()`,
   `showDateTime()`. `nesbot/carbon` (`^2.53 || ^3.0`) is an explicit dependency.
 - `SageCounseling\Helpers\Notifications\{Severity,Channel,ChannelMap,ChannelSender,ChannelRegistry,
-  NullChannelSender,AdminMessage,AdminAlert,AdminInfo}` — the framework-agnostic routing core, with unit
+  NullChannelSender,AdminMessage,AdminAlert,AdminInfo}` — the routing core, with unit
   tests covering per-severity channel sets, `AdminInfo` targeting only its named channel, and unregistered
   channels no-op'ing instead of throwing.
 - `config/sage-helpers.php` + `SageCounseling\Helpers\Laravel\SageHelpersServiceProvider` — the
   Laravel-specific glue (issue #4). Reads the three canonical env vars, publishes the config into a
   consuming app, and is auto-discovered via `composer.json`'s `extra.laravel.providers`. Depends on
-  `illuminate/support` (`^9.0 || ^10.0 || ^11.0 || ^12.0 || ^13.0`, issues #15, #19) — the only part of the
-  package allowed to depend on `illuminate/*`, per `.ai/CONTEXT.md`.
+  `illuminate/support` (`^9.0 || ^10.0 || ^11.0 || ^12.0 || ^13.0`, issues #15, #19).
 - `SageCounseling\Helpers\Notifications\MailChannelSender` (issue #9) — sends an `AdminMessage` as raw text
   via a constructor-injected `Illuminate\Contracts\Mail\Mailer`, addressed to `sage-helpers.admin.email`/
   `.name`.
@@ -61,6 +60,10 @@ current milestone.
 
 ## Recent decisions
 
+- 2026-09-27: Dropped the "framework-agnostic `src/`" rule. The package assumes it runs under Laravel (all
+  consumers are Laravel apps, `illuminate/support` is a hard dependency), so any code in `src/` may use
+  Laravel features. Surfaced while scoping #22 (queued alert delivery). Supersedes the #1/#4 framework
+  scoping below.
 - 2026-09-26: Issue #6 added `Dates`. Unblocked because all three consuming apps now set
   `APP_TIMEZONE="America/Phoenix"` (confirmed by Miri). `showDate()`/`showDateTime()` ship the rps behavior
   (`Carbon::parse($date)`), return `''` for null/empty, and deliberately do not convert timezones — callers

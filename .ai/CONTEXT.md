@@ -12,8 +12,10 @@ and no CLI of its own.
 
 ## Framework and versions
 
-No framework dependency. `composer.json` requires only `php: ^8.1`. Do not add `illuminate/support` or any
-other framework package without an explicit decision — see the PHP guardrails in `.ai/GUARDRAILS.md`.
+Laravel. The package assumes it runs inside a Laravel app, since all three consumers are Laravel apps.
+`composer.json` requires `illuminate/support` (`^9.0 || ^10.0 || ^11.0 || ^12.0 || ^13.0`), `nesbot/carbon`
+and `guzzlehttp/guzzle`, and auto-registers `SageHelpersServiceProvider`. Code anywhere in `src/` may use
+Laravel features (container, config, queues, facades, contracts) where they fit.
 
 ## Tooling
 
@@ -44,13 +46,13 @@ None. This package has no database and no persistent state.
 
 ## Languages and Frameworks
 
-PHP 8.1+. No framework. Depends only on PHPUnit ^10 as a dev dependency.
+PHP 8.1+, Laravel 9–13 (via `illuminate/*`). PHPUnit ^10 as a dev dependency.
 
 ## Tooling Expectations
 
-Keep the package framework-agnostic in `src/` — any Laravel-specific glue (service provider, published
-config) should be scoped narrowly and not force a framework dependency for consumers who only want the
-plain PHP utilities.
+The package targets Laravel apps, so prefer Laravel's own mechanisms (queues, notifications, config,
+container bindings, fakes in tests) over package-built abstractions. Any `illuminate/*` usage must stay
+compatible with the full supported range, Laravel 9–13.
 
 ## Schema/Data Authority
 
