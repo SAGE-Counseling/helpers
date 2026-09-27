@@ -25,3 +25,7 @@ The fixed, package-wide mapping from Severity to the set of Channels an AdminAle
 **AdminInfo**:
 A second, distinct entry point from AdminAlert, for a routine status message directed at exactly one explicitly-named Channel — e.g. a Teams-only heads-up that was never meant to also email Admin. Always informational; it has no Severity and does not use the Channel Map. Shares the same underlying per-channel senders as AdminAlert (one Mail sender, one Teams sender, etc.) so adding a channel later means writing that sender once, not once per entry point.
 _Avoid_: using AdminAlert with Severity::Info as a stand-in for "just post to Teams" — that conflates the two concepts and reintroduces per-call-site channel picking into AdminAlert, which ADR-0001 explicitly rejected.
+
+**Delivery**:
+One AdminMessage sent on one Channel. An AdminAlert produces one Delivery per Channel in its Channel Map; AdminInfo produces exactly one. Each Delivery succeeds, retries, or fails independently of the others. A Delivery is either *immediate* or *queued* (a per-site choice); `Urgent` Deliveries are always immediate, so an alert about the queue itself still gets out. A failed Delivery is logged, never turned into another alert, and never breaks the code that raised it.
+_Avoid_: "notification" (collides with Laravel Notifications), "send" as a noun
