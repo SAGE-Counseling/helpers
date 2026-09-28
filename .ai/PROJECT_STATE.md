@@ -10,18 +10,17 @@ one-time task).
 Admin-notifications core routing is implemented (issue #1, merged). The Laravel config + service-provider
 scaffold (#4), Mail (#9), and Teams (#10) channel senders are all merged — `AdminAlert`/`AdminInfo` are
 usable end-to-end on both channels. `illuminate/support` supports Laravel 9–13 (#15, #19). The
-date/timezone module (#6) is implemented on this branch. CSV helpers (#7) are in review on
-`ai/claude/7-csv-helpers`. The last spec-#3 extraction, misc pure-utility helpers (#8), is in review on
-`ai/claude/8-misc-helpers`.
+date/timezone module (#6), CSV helpers (#7), misc helpers (#8), and queued Delivery (#22) are merged. Spec #3 is
+closed (2026-09-28): all of its package-side work has shipped.
 
 ## What's working
 
 - Composer package skeleton (PSR-4, PHPUnit, CI workflow, MIT license) is in place.
 - `SageCounseling\Helpers\Str` exists with a passing test (`tests/StrTest.php`).
-- `SageCounseling\Helpers\Csv` (issue #7, in review): `row()`/`rows()` (fputcsv-escaped; ports rps
+- `SageCounseling\Helpers\Csv` (issue #7): `row()`/`rows()` (fputcsv-escaped; ports rps
   `filterToCsv`/`filterAllToCsv`) and `quotedRow()`/`quotedRows()` (quote-and-join, no escaping, CRLF; ports
   `make_csv`/`makeFullCsv`). `make_csv_helper` not ported.
-- Misc helpers (issue #8, in review): `Path::join()`, `Csv::escapeCommas()`/`escapeCommasIn()` (`&comma;`
+- Misc helpers (issue #8): `Path::join()`, `Csv::escapeCommas()`/`escapeCommasIn()` (`&comma;`
   for Credible), `Str::snake()` (no Illuminate), `Str::highlight()`, `Debug::log()`/`here()` (gated by
   `app.debug`), `Redaction\CredentialRedactor::last()`, `Redaction\SqlMessageRedactor::stripSqlSuffix()`.
 - `SageCounseling\Helpers\Dates` (issue #6): `TIMEZONE = 'America/Phoenix'`, `fromUtc()`, `showDate()`,
@@ -52,11 +51,11 @@ date/timezone module (#6) is implemented on this branch. CSV helpers (#7) are in
 - Design docs for the admin-notifications module are settled: see `docs/admin-notifications-contract.md`,
   root `CONTEXT.md`, and `docs/adr/0001-fixed-severity-channel-map.md` /
   `docs/adr/0002-admininfo-separate-entry-point.md`.
-- Queued Delivery (issue #22, in review): `AdminAlert`/`AdminInfo` hand each Channel to
+- Queued Delivery (issue #22): `AdminAlert`/`AdminInfo` hand each Channel to
   `Notifications\Delivery`. With `sage-helpers.queue.enabled`, non-Urgent Deliveries dispatch an encrypted
   `QueuedDelivery` job per configured Channel. Urgent always sends immediately. Send failures are logged
   (no body), never thrown. `GuzzleHttpPoster` has a 5s timeout. See ADR-0003.
-- `vendor/bin/phpunit` passes (82 tests, 188 assertions) on the #8 branch.
+- `vendor/bin/phpunit` passes (82 tests, 188 assertions) on master.
 
 ## What's broken / blocked
 
@@ -64,9 +63,9 @@ date/timezone module (#6) is implemented on this branch. CSV helpers (#7) are in
 
 ## Next milestone
 
-The admin-notifications module (#1, #4, #9, #10) is now complete end-to-end. Next: general-helper
-extractions (#7 in review, #8); the date/timezone module (#6) is in review. ClickSend SMS remains future work, not part of any
-current milestone.
+Spec #3 is complete. There is no active milestone. Open work: #25 (Credible-safe CSV, blocked on Miri's
+Credible tests). Migrating each app onto the package happens in that app's own repo. ClickSend SMS remains future
+work.
 
 ## Recent decisions
 
