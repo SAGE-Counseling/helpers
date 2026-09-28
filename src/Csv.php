@@ -57,6 +57,29 @@ class Csv
     }
 
     /**
+     * Replaces every comma with "&comma;". Credible's home-grown CSV import splits on commas even
+     * inside quotes, but turns "&comma;" back into a comma on insert. Replaces rps's filterStringComma().
+     * See issue #25 for the other characters Credible may mishandle.
+     */
+    public static function escapeCommas(string $value): string
+    {
+        return str_replace(',', '&comma;', $value);
+    }
+
+    /**
+     * Applies escapeCommas() to every value, recursing into nested arrays and keeping keys. Nulls
+     * become '' and other scalars are cast to string. Replaces rps's filterArrayComma().
+     */
+    public static function escapeCommasIn(array $values): array
+    {
+        foreach ($values as $key => $value) {
+            $values[$key] = is_array($value) ? self::escapeCommasIn($value) : self::escapeCommas((string) $value);
+        }
+
+        return $values;
+    }
+
+    /**
      * Formats rows through fputcsv on an in-memory stream and returns the text. The escape character is
      * passed explicitly (fputcsv's historical default) so output matches rps and PHP 8.4+ doesn't warn.
      */

@@ -66,4 +66,17 @@ class CsvTest extends TestCase
             Csv::quotedRows([[1, 'x'], [2, 'y']]),
         );
     }
+
+    public function test_escape_commas_replaces_each_comma_with_the_comma_entity(): void
+    {
+        $this->assertSame('Smith&comma; John&comma; Jr', Csv::escapeCommas('Smith, John, Jr'));
+    }
+
+    public function test_escape_commas_in_walks_nested_arrays_and_blanks_nulls(): void
+    {
+        $this->assertSame(
+            ['note' => 'late&comma; rescheduled', 'id' => '42', 'mi' => '', 'tags' => ['a&comma;b', 'c']],
+            Csv::escapeCommasIn(['note' => 'late, rescheduled', 'id' => 42, 'mi' => null, 'tags' => ['a,b', 'c']])
+        );
+    }
 }
