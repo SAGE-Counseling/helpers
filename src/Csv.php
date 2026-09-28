@@ -10,7 +10,7 @@ class Csv
      */
     public static function row(array $fields): string
     {
-        return self::write([$fields]);
+        return self::format([$fields]);
     }
 
     /**
@@ -21,7 +21,7 @@ class Csv
      */
     public static function rows(array $rows): string
     {
-        return self::write($rows);
+        return self::format($rows);
     }
 
     /**
@@ -57,10 +57,10 @@ class Csv
     }
 
     /**
-     * Writes rows through fputcsv to an in-memory stream and returns the text. The escape character is
+     * Formats rows through fputcsv on an in-memory stream and returns the text. The escape character is
      * passed explicitly (fputcsv's historical default) so output matches rps and PHP 8.4+ doesn't warn.
      */
-    private static function write(array $rows): string
+    private static function format(array $rows): string
     {
         $stream = fopen('php://temp', 'w+');
 

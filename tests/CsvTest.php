@@ -44,6 +44,21 @@ class CsvTest extends TestCase
         );
     }
 
+    public function test_quoted_row_uses_a_json_serializable_objects_serialized_form(): void
+    {
+        $model = new class implements \JsonSerializable
+        {
+            private array $attributes = ['id' => 9, 'name' => 'Sam'];
+
+            public function jsonSerialize(): array
+            {
+                return $this->attributes;
+            }
+        };
+
+        $this->assertSame('"9","Sam"', Csv::quotedRow($model));
+    }
+
     public function test_quoted_rows_ends_every_quoted_row_with_crlf(): void
     {
         $this->assertSame(
