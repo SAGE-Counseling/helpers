@@ -37,6 +37,8 @@ SAGE_TEAMS_APP_LABEL="RPS (Testing Environment)"
 | `SAGE_ADMIN_EMAIL` | The single email address all admin reports/alerts/warnings go to. |
 | `SAGE_ADMIN_NAME` | The display name paired with that address (used as the `Mail::to([$email => $name])` name, and anywhere a report needs to show who/what it's addressed to). |
 | `SAGE_TEAMS_WEBHOOK_URL` | The Microsoft Teams **Power Automate Workflows** webhook URL used by the Teams notification channel, for sites that send Teams alerts. The channel posts an Adaptive Card envelope; legacy Office 365 connector URLs (`*.webhook.office.com/webhookb2/...`) are retired and not supported. Sites that don't use Teams simply leave it unset. |
+| `SAGE_ALERTS_QUEUE` | Optional, default `false`. Queue `Info`/`Warning` Deliveries and `AdminInfo` instead of sending inline; `Urgent` always sends immediately. See [ADR-0003](./adr/0003-queued-delivery-urgent-immediate.md). |
+| `SAGE_ALERTS_QUEUE_CONNECTION` / `SAGE_ALERTS_QUEUE_NAME` | Optional. Queue connection (default: the app's default) and queue name (default `default`) for queued Deliveries. |
 | `SAGE_TEAMS_APP_LABEL` | Optional. Identifies the app/environment in the Teams card heading (`{Info\|Warning\|URGENT} — {label}`), since all three apps may post to the same channel. Falls back to `APP_NAME`; if both are unset the heading is just the severity prefix. |
 
 A site with no Teams integration (currently only `rps` has one) can leave `SAGE_TEAMS_WEBHOOK_URL` blank; the package's Teams channel should no-op (or log a warning once) rather than error if it's called with no webhook configured.
@@ -54,6 +56,11 @@ return [
     'teams' => [
         'webhook_url' => env('SAGE_TEAMS_WEBHOOK_URL'),
         'app_label'   => env('SAGE_TEAMS_APP_LABEL', env('APP_NAME')),
+    ],
+    'queue' => [
+        'enabled'    => env('SAGE_ALERTS_QUEUE', false),
+        'connection' => env('SAGE_ALERTS_QUEUE_CONNECTION'),
+        'name'       => env('SAGE_ALERTS_QUEUE_NAME', 'default'),
     ],
 ];
 ```

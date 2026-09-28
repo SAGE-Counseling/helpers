@@ -45,8 +45,11 @@ date/timezone module (#6) is implemented on this branch. Remaining from spec #3:
 - Design docs for the admin-notifications module are settled: see `docs/admin-notifications-contract.md`,
   root `CONTEXT.md`, and `docs/adr/0001-fixed-severity-channel-map.md` /
   `docs/adr/0002-admininfo-separate-entry-point.md`.
-- `vendor/bin/phpunit` passes (22 tests, 45 assertions) on this branch, including a test covering both
-  senders registered together.
+- Queued Delivery (issue #22, in review): `AdminAlert`/`AdminInfo` hand each Channel to
+  `Notifications\Delivery`. With `sage-helpers.queue.enabled`, non-Urgent Deliveries dispatch an encrypted
+  `QueuedDelivery` job per configured Channel. Urgent always sends immediately. Send failures are logged
+  (no body), never thrown. `GuzzleHttpPoster` has a 5s timeout. See ADR-0003.
+- `vendor/bin/phpunit` passes (60 tests, 156 assertions) on the #22 branch.
 
 ## What's broken / blocked
 
@@ -60,6 +63,9 @@ current milestone.
 
 ## Recent decisions
 
+- 2026-09-27: Issue #22 queued Delivery — design settled via `/grill-with-docs` (ADR-0003, `CONTEXT.md`
+  **Delivery**). Beyond the issue: an unconfigured Channel isn't queued as a no-op job, and a dispatch
+  failure (e.g. Redis down) is logged like any failed Delivery (no fallback to an immediate send).
 - 2026-09-27: Dropped the "framework-agnostic `src/`" rule. The package assumes it runs under Laravel (all
   consumers are Laravel apps, `illuminate/support` is a hard dependency), so any code in `src/` may use
   Laravel features. Surfaced while scoping #22 (queued alert delivery). Supersedes the #1/#4 framework

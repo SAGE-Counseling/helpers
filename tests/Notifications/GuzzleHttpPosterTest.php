@@ -19,4 +19,15 @@ class GuzzleHttpPosterTest extends TestCase
         $this->assertSame('https://example.webhook.office.com/webhookb2/abc', $client->requests[0]['uri']);
         $this->assertSame(['text' => 'hello'], $client->requests[0]['options']['json']);
     }
+
+    public function test_gives_up_on_a_hung_endpoint_after_five_seconds(): void
+    {
+        $client = new FakeGuzzleClient();
+        $poster = new GuzzleHttpPoster($client);
+
+        $poster->postJson('https://example.webhook.office.com/webhookb2/abc', ['text' => 'hello']);
+
+        $this->assertSame(5, $client->requests[0]['options']['connect_timeout']);
+        $this->assertSame(5, $client->requests[0]['options']['timeout']);
+    }
 }

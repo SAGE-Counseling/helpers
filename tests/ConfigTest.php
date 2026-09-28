@@ -13,6 +13,9 @@ class ConfigTest extends TestCase
         putenv('SAGE_TEAMS_WEBHOOK_URL');
         putenv('SAGE_TEAMS_APP_LABEL');
         putenv('APP_NAME');
+        putenv('SAGE_ALERTS_QUEUE');
+        putenv('SAGE_ALERTS_QUEUE_CONNECTION');
+        putenv('SAGE_ALERTS_QUEUE_NAME');
 
         parent::tearDown();
     }
@@ -23,6 +26,9 @@ class ConfigTest extends TestCase
         putenv('SAGE_ADMIN_NAME=SAGE Admin Alerts');
         putenv('SAGE_TEAMS_WEBHOOK_URL=https://tenant.webhook.office.com/webhookb2/abc');
         putenv('SAGE_TEAMS_APP_LABEL=RPS (Testing Environment)');
+        putenv('SAGE_ALERTS_QUEUE=true');
+        putenv('SAGE_ALERTS_QUEUE_CONNECTION=redis');
+        putenv('SAGE_ALERTS_QUEUE_NAME=alerts');
 
         $config = require __DIR__.'/../config/sage-helpers.php';
 
@@ -34,6 +40,11 @@ class ConfigTest extends TestCase
             'teams' => [
                 'webhook_url' => 'https://tenant.webhook.office.com/webhookb2/abc',
                 'app_label' => 'RPS (Testing Environment)',
+            ],
+            'queue' => [
+                'enabled' => true,
+                'connection' => 'redis',
+                'name' => 'alerts',
             ],
         ], $config);
     }
@@ -55,5 +66,14 @@ class ConfigTest extends TestCase
         $config = require __DIR__.'/../config/sage-helpers.php';
 
         $this->assertSame('RPS', $config['teams']['app_label']);
+    }
+
+    public function test_queueing_is_off_by_default_on_the_default_queue(): void
+    {
+        $config = require __DIR__.'/../config/sage-helpers.php';
+
+        $this->assertFalse($config['queue']['enabled']);
+        $this->assertNull($config['queue']['connection']);
+        $this->assertSame('default', $config['queue']['name']);
     }
 }

@@ -3,10 +3,12 @@
 namespace SageCounseling\Helpers\Laravel;
 
 use GuzzleHttp\Client;
+use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Contracts\Mail\Mailer;
 use Illuminate\Support\ServiceProvider;
 use SageCounseling\Helpers\Notifications\Channel;
 use SageCounseling\Helpers\Notifications\ChannelRegistry;
+use SageCounseling\Helpers\Notifications\Delivery;
 use SageCounseling\Helpers\Notifications\GuzzleHttpPoster;
 use SageCounseling\Helpers\Notifications\HttpPoster;
 use SageCounseling\Helpers\Notifications\MailChannelSender;
@@ -15,10 +17,8 @@ use SageCounseling\Helpers\Notifications\TeamsChannelSender;
 /**
  * Laravel glue for sage-counseling/helpers: publishes config/sage-helpers.php
  * and, on boot, wires up whatever channel senders a consuming app has
- * configured into ChannelRegistry (see docs/admin-notifications-contract.md).
- *
- * This is the only part of the package allowed to depend on illuminate/* —
- * the framework-agnostic core stays in SageCounseling\Helpers\Notifications.
+ * configured into ChannelRegistry (see docs/admin-notifications-contract.md),
+ * and switches Deliveries to the queue when sage-helpers.queue.enabled is on.
  */
 class SageHelpersServiceProvider extends ServiceProvider
 {
@@ -38,6 +38,22 @@ class SageHelpersServiceProvider extends ServiceProvider
         ], 'sage-helpers-config');
 
         $this->registerConfiguredSenders();
+        $this->configureQueuedDelivery();
+    }
+
+    protected function configureQueuedDelivery(): void
+    {
+        $queue = $this->app->make('config')->get('sage-helpers', [])['queue'] ?? [];
+
+        if (empty($queue['enabled'])) {
+            return;
+        }
+
+        Delivery::queueOn(
+            $this->app->make(Dispatcher::class),
+            $queue['connection'] ?? null,
+            $queue['name'] ?? null,
+        );
     }
 
     /**

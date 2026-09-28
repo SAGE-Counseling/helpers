@@ -11,6 +11,6 @@ final class AdminInfo
 {
     public static function send(Channel $channel, string $message): void
     {
-        ChannelRegistry::get($channel)->send(new AdminMessage($message, Severity::Info));
+        Delivery::send($channel, new AdminMessage($message, Severity::Info));
     }
 }
