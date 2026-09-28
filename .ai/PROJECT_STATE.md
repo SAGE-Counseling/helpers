@@ -10,13 +10,16 @@ one-time task).
 Admin-notifications core routing is implemented (issue #1, merged). The Laravel config + service-provider
 scaffold (#4), Mail (#9), and Teams (#10) channel senders are all merged — `AdminAlert`/`AdminInfo` are
 usable end-to-end on both channels. `illuminate/support` supports Laravel 9–13 (#15, #19). The
-date/timezone module (#6) is implemented on this branch. Remaining from spec #3: general-helper extractions
-(#7, #8).
+date/timezone module (#6) is implemented on this branch. CSV helpers (#7) are in review on
+`ai/claude/7-csv-helpers`. Remaining from spec #3: general-helper extractions (#8).
 
 ## What's working
 
 - Composer package skeleton (PSR-4, PHPUnit, CI workflow, MIT license) is in place.
 - `SageCounseling\Helpers\Str` exists with a passing test (`tests/StrTest.php`).
+- `SageCounseling\Helpers\Csv` (issue #7, in review): `row()`/`rows()` (fputcsv-escaped; ports rps
+  `filterToCsv`/`filterAllToCsv`) and `quotedRow()`/`quotedRows()` (quote-and-join, no escaping, CRLF; ports
+  `make_csv`/`makeFullCsv`). `make_csv_helper` not ported.
 - `SageCounseling\Helpers\Dates` (issue #6): `TIMEZONE = 'America/Phoenix'`, `fromUtc()`, `showDate()`,
   `showDateTime()`. `nesbot/carbon` (`^2.53 || ^3.0`) is an explicit dependency.
 - `SageCounseling\Helpers\Notifications\{Severity,Channel,ChannelMap,ChannelSender,ChannelRegistry,
@@ -49,20 +52,24 @@ date/timezone module (#6) is implemented on this branch. Remaining from spec #3:
   `Notifications\Delivery`. With `sage-helpers.queue.enabled`, non-Urgent Deliveries dispatch an encrypted
   `QueuedDelivery` job per configured Channel. Urgent always sends immediately. Send failures are logged
   (no body), never thrown. `GuzzleHttpPoster` has a 5s timeout. See ADR-0003.
-- `vendor/bin/phpunit` passes (60 tests, 156 assertions) on the #22 branch.
+- `vendor/bin/phpunit` passes (67 tests, 163 assertions) on the #7 branch.
 
 ## What's broken / blocked
 
-- The general-helper extractions in `docs/helper-consolidation-candidates.md` (#7, #8) are still unstarted.
+- The remaining general-helper extraction in `docs/helper-consolidation-candidates.md` (#8) is unstarted.
 
 ## Next milestone
 
 The admin-notifications module (#1, #4, #9, #10) is now complete end-to-end. Next: general-helper
-extractions (#7, #8); the date/timezone module (#6) is in review. ClickSend SMS remains future work, not part of any
+extractions (#7 in review, #8); the date/timezone module (#6) is in review. ClickSend SMS remains future work, not part of any
 current milestone.
 
 ## Recent decisions
 
+- 2026-09-27: Issue #7 `Csv::quotedRow()` accepts objects via their JSON form (`json_decode(..., true)`), so
+  public properties and `JsonSerializable` (e.g. Eloquent models) work. rps's `make_csv` object branch threw a
+  TypeError (it imploded a `stdClass`). `fputcsv` gets an explicit `'\\'` escape so output matches rps and
+  PHP 8.4 doesn't emit a deprecation.
 - 2026-09-27: Issue #22 queued Delivery — design settled via `/grill-with-docs` (ADR-0003, `CONTEXT.md`
   **Delivery**). Beyond the issue: an unconfigured Channel isn't queued as a no-op job, and a dispatch
   failure (e.g. Redis down) is logged like any failed Delivery (no fallback to an immediate send).
