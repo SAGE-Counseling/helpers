@@ -11,7 +11,8 @@ Admin-notifications core routing is implemented (issue #1, merged). The Laravel 
 scaffold (#4), Mail (#9), and Teams (#10) channel senders are all merged — `AdminAlert`/`AdminInfo` are
 usable end-to-end on both channels. `illuminate/support` supports Laravel 9–13 (#15, #19). The
 date/timezone module (#6) is implemented on this branch. CSV helpers (#7) are in review on
-`ai/claude/7-csv-helpers`. Remaining from spec #3: general-helper extractions (#8).
+`ai/claude/7-csv-helpers`. The last spec-#3 extraction, misc pure-utility helpers (#8), is in review on
+`ai/claude/8-misc-helpers`.
 
 ## What's working
 
@@ -20,6 +21,9 @@ date/timezone module (#6) is implemented on this branch. CSV helpers (#7) are in
 - `SageCounseling\Helpers\Csv` (issue #7, in review): `row()`/`rows()` (fputcsv-escaped; ports rps
   `filterToCsv`/`filterAllToCsv`) and `quotedRow()`/`quotedRows()` (quote-and-join, no escaping, CRLF; ports
   `make_csv`/`makeFullCsv`). `make_csv_helper` not ported.
+- Misc helpers (issue #8, in review): `Path::join()`, `Csv::escapeCommas()`/`escapeCommasIn()` (`&comma;`
+  for Credible), `Str::snake()` (no Illuminate), `Str::highlight()`, `Debug::log()`/`here()` (gated by
+  `app.debug`), `Redaction\CredentialRedactor::last()`, `Redaction\SqlMessageRedactor::stripSqlSuffix()`.
 - `SageCounseling\Helpers\Dates` (issue #6): `TIMEZONE = 'America/Phoenix'`, `fromUtc()`, `showDate()`,
   `showDateTime()`. `nesbot/carbon` (`^2.53 || ^3.0`) is an explicit dependency.
 - `SageCounseling\Helpers\Notifications\{Severity,Channel,ChannelMap,ChannelSender,ChannelRegistry,
@@ -52,11 +56,11 @@ date/timezone module (#6) is implemented on this branch. CSV helpers (#7) are in
   `Notifications\Delivery`. With `sage-helpers.queue.enabled`, non-Urgent Deliveries dispatch an encrypted
   `QueuedDelivery` job per configured Channel. Urgent always sends immediately. Send failures are logged
   (no body), never thrown. `GuzzleHttpPoster` has a 5s timeout. See ADR-0003.
-- `vendor/bin/phpunit` passes (67 tests, 163 assertions) on the #7 branch.
+- `vendor/bin/phpunit` passes (82 tests, 188 assertions) on the #8 branch.
 
 ## What's broken / blocked
 
-- The remaining general-helper extraction in `docs/helper-consolidation-candidates.md` (#8) is unstarted.
+- Credible-safe CSV encoding (#25) is waiting on Miri's tests of how Credible handles quotes and newlines.
 
 ## Next milestone
 
@@ -65,6 +69,12 @@ extractions (#7 in review, #8); the date/timezone module (#6) is in review. Clic
 current milestone.
 
 ## Recent decisions
+
+- 2026-09-27: Issue #8 `Str::highlight()` is a single-pass regex, not a line-for-line port. rps's loop wrapped
+  repeated same-case matches twice and only stripped tags when something matched; the port always strips tags
+  and accepts null (Blade passes nullable model fields). `Debug` assumes Laravel (facades, no fallback) per the
+  dropped framework-agnostic rule. `CredentialRedactor::last()` kept as is, so a value no longer than `$keep`
+  comes back whole.
 
 - 2026-09-27: Issue #7 `Csv::quotedRow()` accepts objects via their JSON form (`json_decode(..., true)`), so
   public properties and `JsonSerializable` (e.g. Eloquent models) work. rps's `make_csv` object branch threw a
