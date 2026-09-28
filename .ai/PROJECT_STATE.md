@@ -69,6 +69,12 @@ work.
 
 ## Recent decisions
 
+- 2026-09-28: bi-reflector stays on UTC (`config/app.php` hardcodes `'timezone' => 'UTC'`, so `APP_TIMEZONE` has
+  no effect), which corrects the 2026-09-26 note that all three apps run on Phoenix time. Miri decided that stored
+  values stay UTC and what users see is shown in Phoenix time, so bi-reflector calls
+  `Dates::showDate*(Dates::fromUtc($value))`. rps and compliance-portal do run on Phoenix time. See
+  SAGE-Counseling/bi-reflector#267.
+
 - 2026-09-27: Issue #8 `Str::highlight()` is a single-pass regex, not a line-for-line port. rps's loop wrapped
   repeated same-case matches twice and only stripped tags when something matched; the port always strips tags
   and accepts null (Blade passes nullable model fields). `Debug` assumes Laravel (facades, no fallback) per the
