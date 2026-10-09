@@ -69,6 +69,9 @@ work.
 
 ## Recent decisions
 
+- 2026-10-08: Issue #30 raised the PHP floor from `^8.1` to `^8.2`. Every consuming app meets it (rps and
+  compliance-portal on `^8.4`/Laravel 13, bi-reflector on `^8.2`/Laravel 10). `^8.4` waits until bi-reflector
+  upgrades. CI now runs 8.2–8.4. Typed class constants (8.3) remain off-limits.
 - 2026-09-28: bi-reflector stays on UTC (`config/app.php` hardcodes `'timezone' => 'UTC'`, so `APP_TIMEZONE` has
   no effect), which corrects the 2026-09-26 note that all three apps run on Phoenix time. Miri decided that stored
   values stay UTC and what users see is shown in Phoenix time, so bi-reflector calls
