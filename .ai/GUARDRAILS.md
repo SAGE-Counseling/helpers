@@ -97,7 +97,7 @@ and the package may use Laravel features throughout `src/`. Guardrails:
 - Laravel features are fair game — prefer Laravel's built-in mechanisms over hand-rolled equivalents. Any
   new `illuminate/*` package or API must work on every supported Laravel version (9–13); check before
   relying on something added in a later release.
-- Favor typed properties, parameters, and return types (PHP 8.1+ features — readonly properties, enums,
+- Favor typed properties, parameters, and return types (PHP 8.2+ features — readonly properties and classes, enums,
   first-class callable syntax) over untyped/dynamic code.
 - Follow the routing/entry-point boundaries already decided for the notifications module — see root
   `CONTEXT.md` and `docs/adr/0001-fixed-severity-channel-map.md` / `docs/adr/0002-admininfo-separate-entry-point.md`
@@ -132,7 +132,7 @@ and the package may use Laravel features throughout `src/`. Guardrails:
 
 ## Version compatibility
 
-Targets PHP ^8.1 per `composer.json`. This package must stay installable by all three consuming apps
+Targets PHP ^8.2 per `composer.json` (raised from ^8.1 in #30; ^8.4 waits on bi-reflector). This package must stay installable by all three consuming apps
 (bi-reflector, rps, compliance-portal) — check their PHP versions before requiring a newer language feature
 if that ever becomes unclear. Laravel support spans 9–13 (`illuminate/support` constraint in
 `composer.json`); widening or narrowing it is an explicit decision (see #15, #19).

@@ -46,7 +46,7 @@ None. This package has no database and no persistent state.
 
 ## Languages and Frameworks
 
-PHP 8.1+, Laravel 9–13 (via `illuminate/*`). PHPUnit ^10 as a dev dependency.
+PHP 8.2+, Laravel 9–13 (via `illuminate/*`). PHPUnit ^10 as a dev dependency.
 
 ## Tooling Expectations
 
